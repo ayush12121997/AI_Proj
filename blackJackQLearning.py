@@ -5,19 +5,20 @@ import random as randi
 
 # noinspection PyRedundantParentheses
 class solveBlackJacK:
-    numEpisodes = 1000000
+    numEpisodes = 10000000
     merges = [[1, 2, 3], [4, 5, 6, 7], [8, 9, 10]]
 
+    # merges = [[1, 2], [3, 4], [5, 6], [7, 8], [9, 10]]
+
     def __init__(self):
-        self.learningRate = 0.01
-        self.explorationRate = 0.3
-        self.discountRate = 0.99
+        self.learningRate = 0.1
+        self.explorationRate = 0.4
+        self.discountRate = 0.999
         self.env = blackJackEnv.blackJack()
         self.actions = [1, 0]
         self.allRewards = []
         self.qTable = {}
-        self.decay = 0.00005
-        self.decay_freq = 100
+        self.decay = 0.000001
         self.minExplorationRate = 0.005
 
     def merge(self, state):
@@ -28,16 +29,18 @@ class solveBlackJacK:
             for i in grp:
                 temp += count[i - 1]
             merged.append(temp)
+        # return tuple(list(state[:-10]) + merged)
         return tuple(list(state[:-10]))
-
 
     def new_actions(self):
         return [0, np.random.uniform(-(0.000001), 0.000001)]
 
     def decay_epsilon(self):
         self.explorationRate = self.minExplorationRate + (self.explorationRate - self.minExplorationRate) * (np.exp(-self.decay))
-        if(not (1 > self.explorationRate > self.minExplorationRate)):
-            print("Wrong decay function ", self.explorationRate)
+        if (not (1 > self.explorationRate > self.minExplorationRate)):
+            print("Error : Wrong decay function in decay_espilon ", self.explorationRate)
+        # if (len(self.qTable) >= 660):
+        #     self.explorationRate = 0
 
     def play(self):
         for episode in range(self.numEpisodes):
@@ -45,7 +48,7 @@ class solveBlackJacK:
             gameState = self.merge(self.env.return_state())
             done = False
             rewardCurrEpisode = 0
-            while(not done):
+            while (not done):
                 explorationValue = randi.uniform(0, 1)
                 if (explorationValue < self.explorationRate):
                     action = np.random.choice(self.actions)
@@ -68,7 +71,7 @@ class solveBlackJacK:
                 if (done):
                     break
             self.decay_epsilon()
-            if (episode % 10000 == 0):
+            if (episode % 100000 == 0):
                 print("Episode : ", episode, "Reward : ", rewardCurrEpisode, " Table density : ", len(self.qTable), " Exp rate : ", self.explorationRate)
             self.allRewards.append(rewardCurrEpisode)
 
@@ -78,7 +81,7 @@ class solveBlackJacK:
         print(option_count)
 
     def printResults(self):
-        gap = 10000
+        gap = 100000
         rewardsForEveryHundred = np.split(np.array(self.allRewards), self.numEpisodes / gap)
         count = gap
 
