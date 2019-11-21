@@ -5,23 +5,40 @@ import numpy as np
 # noinspection PyRedundantParentheses
 
 class blackJack():
-    numDeck = 10
+    numDeck = 5
+    rounds = 5
+    deck = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10]
 
     def __init__(self):
         self.cardCount = [0 for i in range(11)]
-        self.deck = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10]
         self.playerSum = 0
-        self.canUseAce = False
         self.dealerSum = 0
-        self.numRounds = 1
+        self.canUseAce = False
+        self.numRounds = self.rounds
+        self.playerHand = []
+        self.dealerHand = []
+        self.shouldNewHand = False
 
     def reset(self):
         for i in self.deck:
             self.cardCount[i] = 4 * blackJack.numDeck
         self.cardCount[10] = 4 * 4 * blackJack.numDeck
-        self.numRounds = 10
+        self.numRounds = self.rounds
+        self.shouldNewHand = False
         self.new_hand()
-        self.numRounds = 1
+
+    def new_hand(self):
+        self.numRounds -= 1
+        self.playerHand = [self.new_card(), self.new_card()]
+        self.dealerHand = [self.new_card(), self.new_card()]
+        self.playerSum = self.find_sum(self.playerHand)
+        self.dealerSum = self.find_sum(self.dealerHand)
+        self.canUseAce = False
+        self.shouldNewHand = False
+
+    # ensure count is returned last
+    def return_state(self):
+        return tuple([self.canUseAce, self.playerSum, self.dealerHand[0], self.numRounds] + self.cardCount)
 
     def new_card(self):
         c = np.random.randint(0, sum(self.cardCount))
@@ -38,83 +55,43 @@ class blackJack():
         self.cardCount[card] -= 1
         return card
 
-    # ensure count is returned last
-    def return_state(self):
-        return tuple([self.canUseAce, self.playerSum, self.dealerSum, self.numRounds] + self.cardCount)
+    def find_sum(self, hand):
+        if (self.can_use_ace(hand)):
+            return sum(hand) + 10
+        return sum(hand)
 
-    def new_hand(self):
-        r = 0
-        self.numRounds -= 1
-        if (self.numRounds < 0):
-            print("Error : Invalid numRounds in new_hand ", self.return_state())
-        while (self.numRounds > 0):
-            self.dealerSum = self.new_card()
-            dealerOtherCard = self.new_card()
-
-            playerC1 = self.new_card()
-            self.canUseAce = False
-            if (playerC1 == 1):
-                self.canUseAce = True
-                playerC1 = 11
-            playerC2 = self.new_card()
-            if (playerC2 == 1):
-                self.canUseAce = True
-                playerC2 = 11
-
-            self.playerSum = playerC1 + playerC2
-            if (self.playerSum > 21):
-                self.playerSum -= 10
-                if(playerC1 == 11 and playerC2 == 11):
-                    self.canUseAce = True
-                else:
-                    self.canUseAce = False
-            if (self.playerSum != 21):
-                return r
-
-            if (dealerOtherCard == 1):
-                dealerOtherCard = 11
-            if (dealerOtherCard + self.dealerSum != 21):
-                r += 1.5
-            self.numRounds -= 1
-        return r
-
-    # action 0 is stay
-    # action 1 is hit
-    def step(self, action):
-        if (action == 1):
-            card = self.new_card()
-            if (card == 1):
-                self.canUseAce = True
-                card = 11
-            self.playerSum += card
-
-            if (self.playerSum > 21 and self.canUseAce):
-                self.playerSum -= 10
-                self.canUseAce = False
-            if (self.playerSum > 21):
-                r = self.new_hand()
-                return self.return_state(), r - 1, self.numRounds == 0
-            return self.return_state(), 0, False
-
+    def can_use_ace(self, hand):
+        if (1 in hand and sum(hand) + 10 <= 21):
+            self.canUseAce = True
+            return True
         else:
-            if (self.dealerSum == 1):
-                otherAce = True
-            else:
-                otherAce = False
-            while (self.dealerSum < 17):
-                card = self.new_card()
+            self.canUseAce = False
+            return False
 
-                if (card == 1 and not otherAce):
-                    card = 11
-                    otherAce = True
-                self.dealerSum += card
-                if (self.dealerSum > 21 and otherAce):
-                    otherAce = False
-                    self.dealerSum -= 10
+    # action 1 is hit and 0 is stay
+    def step(self, action):
+        self.shouldNewHand = False
+        if (action == 1):
+            self.playerHand.append(self.new_card())
+            self.playerSum = self.find_sum(self.playerHand)
+            if (self.playerSum > 21):
+                self.shouldNewHand = True
+                return self.return_state(), -1, self.numRounds == 0, self.shouldNewHand
+            else:
+                return self.return_state(), 0, False, self.shouldNewHand
+        else:
+            self.playerSum = self.find_sum(self.playerHand)
+            while (sum(self.dealerHand) < 17):
+                self.dealerHand.append(self.new_card())
+                self.dealerSum = self.find_sum(self.dealerHand)
             r = 0
-            if (self.dealerSum < self.playerSum):
-                r += 1
-            elif (self.dealerSum > self.playerSum):
-                r -= 1
-            r += self.new_hand()
-            return self.return_state(), r, self.numRounds == 0
+            if (21 >= self.dealerSum > self.playerSum):
+                r = -1
+            elif (self.dealerSum == self.playerSum):
+                r = 0
+            elif (sorted(self.playerHand) == [1, 10] and self.dealerSum < self.playerSum):
+                r = 1.5
+            else:
+                r = 1
+            self.shouldNewHand = True
+            return self.return_state(), r, self.numRounds == 0, self.shouldNewHand
