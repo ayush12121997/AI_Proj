@@ -5,7 +5,7 @@ import numpy as np
 # noinspection PyRedundantParentheses
 
 class blackJack():
-    numDeck = 2
+    numDeck = 5
     rounds = 5
     deck = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10]
 
@@ -38,13 +38,19 @@ class blackJack():
         self.playerHand = [self.new_card(1), self.new_card(1)]
         self.dealerHand = [self.new_card(1), self.new_card(0)]
         self.playerSum = self.find_sum(self.playerHand)
-        self.dealerSum = self.find_sum(self.dealerHand)
+        if(self.canUseAce):
+            self.dealerSum = self.find_sum(self.dealerHand)
+            self.canUseAce = True
+        else:
+            self.dealerSum = self.find_sum(self.dealerHand)
+            self.canUseAce = False
         if(sorted(self.playerHand) == [1, 10]):
+            # print("Got natural in new hand")
             self.isNatural = True
 
     # ensure count is returned last
     def return_state(self):
-        return tuple([self.canUseAce, self.playerSum, self.dealerHand[0], self.numRounds] + self.forPlayerCardCount)
+        return tuple([self.canUseAce, self.playerSum, self.dealerHand[0], self.numRounds] + self.cardCount)
 
     def new_card(self, a):
         if(sum(self.cardCount) <= 20 ):
@@ -82,17 +88,25 @@ class blackJack():
     def step(self, action):
         if (action == 1):
             self.playerHand.append(self.new_card(1))
+            # print("Self hand in hit", self.playerHand)
             self.playerSum = self.find_sum(self.playerHand)
             if (self.playerSum > 21):
                 self.new_hand()
+                # print("Self new hand in hit", self.playerHand)
                 return self.return_state(), -1, self.numRounds == -1, self.isNatural
             else:
                 return self.return_state(), 0, False, self.isNatural
         else:
+            # print("Self hand", self.playerHand)
             self.playerSum = self.find_sum(self.playerHand)
             while (sum(self.dealerHand) < 17):
                 self.dealerHand.append(self.new_card(0))
-                self.dealerSum = self.find_sum(self.dealerHand)
+                if (self.canUseAce):
+                    self.dealerSum = self.find_sum(self.dealerHand)
+                    self.canUseAce = True
+                else:
+                    self.dealerSum = self.find_sum(self.dealerHand)
+                    self.canUseAce = False
             r = 0
             if (21 >= self.dealerSum > self.playerSum):
                 r = -1
@@ -103,4 +117,5 @@ class blackJack():
             else:
                 r = 1
             self.new_hand()
+            # print("Self new hand", self.playerHand)
             return self.return_state(), r, self.numRounds == -1, self.isNatural
