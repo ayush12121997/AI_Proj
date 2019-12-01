@@ -6,7 +6,7 @@ import time
 
 # noinspection PyRedundantParentheses
 class solveBlackJacK:
-    numEpisodes = 1000000
+    numEpisodes = 1500000
     merges = [[1, 2, 3], [4, 5, 6, 7], [8, 9, 10]]
     # merges = [[1, 2], [3, 4], [5, 6], [7, 8], [9, 10]]
     # merges = [[1], [2], [3], [4], [5], [6], [7], [8], [9], [10]]
@@ -46,13 +46,17 @@ class solveBlackJacK:
     def play(self):
         self.startTime = time.perf_counter()
         for episode in range(self.numEpisodes):
-            self.env.reset()
-            gameState = self.merge(self.env.return_state())
+            gameState, isNatural = self.env.reset()
+            gameState = self.merge(gameState)
             done = False
             rewardCurrEpisode = 0
+
             while (not done):
                 explorationValue = randi.uniform(0, 1)
-                if (explorationValue < self.explorationRate):
+                if (isNatural):
+                    action = 0
+
+                elif (explorationValue < self.explorationRate):
                     action = np.random.choice(self.actions)
                 else:
                     if (gameState not in self.qTable):
@@ -63,7 +67,8 @@ class solveBlackJacK:
                         action = 1
                     else:
                         action = np.random.choice(self.actions)
-                new_gameState, reward, done, shouldNewHand = self.env.step(action)
+
+                new_gameState, reward, done, isNatural = self.env.step(action)
                 new_gameState = self.merge(new_gameState)
 
                 if (gameState not in self.qTable):
@@ -71,13 +76,17 @@ class solveBlackJacK:
                 if (new_gameState not in self.qTable):
                     self.qTable[new_gameState] = self.new_actions()
                 self.qTable[gameState][action] += self.learningRate * (reward + self.discountRate * np.max(self.qTable[new_gameState]) - self.qTable[gameState][action])
+                # if (gameState[1] == 21 and np.argmax(self.qTable[gameState]) == 1):
+                #     print(gameState, reward, action, new_gameState)
+                #     print(self.qTable[gameState])
+                #     print(self.qTable[new_gameState])
+
                 gameState = new_gameState
                 rewardCurrEpisode += reward
                 if (done):
                     break
-                if (shouldNewHand):
-                    self.env.new_hand()
-            if (episode < self.numEpisodes * 0.6):
+
+            if (episode < self.numEpisodes * 0.4):
                 self.decay = 1 / self.numEpisodes
             else:
                 self.decay = 10 / self.numEpisodes
