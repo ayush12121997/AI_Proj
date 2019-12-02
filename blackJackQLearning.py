@@ -131,7 +131,7 @@ class solveBlackJacK:
         array_x = array_x[4:-5]
         array_x = np.array(array_x)
         plt.plot(array_x, moving_aves)
-        plt.title("Q Learning : With card counting (1 Rounds)")
+        plt.title("Q Learning : With card counting (1 Round)")
         plt.xlabel("Number of episodes")
         plt.ylabel("Average reward")
         plt.show()

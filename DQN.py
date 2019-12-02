@@ -28,7 +28,7 @@ class DQN():
     GAMMA = 0.9
     LEARNING_RATE = 0.5
     BATCH_SIZE = 15
-    NUM_EPISODES = 7500
+    NUM_EPISODES = 50000
 
     def __init__(self, observation_space):
 
@@ -44,6 +44,13 @@ class DQN():
                                  Dense(2)]
                                 )
         self.model.compile(loss="mse", optimizer=Adam(lr=DQN.LEARNING_RATE))
+        self.critic = Sequential([Dense(15, input_shape=(observation_space,)),
+                                 Activation("relu"),
+                                 Dense(6),
+                                 Activation("relu"),
+                                 Dense(2)]
+                                )
+        self.critic.compile(loss="mse", optimizer=Adam(lr=DQN.LEARNING_RATE))
 
     def decay_epsilon(self, episodes):
         if (episodes < 0.6 * DQN.NUM_EPISODES):
@@ -67,9 +74,11 @@ class DQN():
         for state, action, reward, state_next, terminal in batch:
             q_update = reward
             if not terminal:
-                q_update += DQN.GAMMA * np.amax(self.model.predict(state_next)[0])
+                q_update += DQN.GAMMA * np.amax(self.critic.predict(state_next)[0])
             q_values = self.model.predict(state)
             # print(q_values)
             q_values[0][action] = q_update
             self.model.fit(state, q_values, verbose=0)
         self.decay_epsilon(num_ep)
+    def make_equal(self):
+        self.critic.set_weights(self.model.get_weights())
