@@ -3,15 +3,17 @@ import random as randi
 import time
 import numpy as np
 
-
-
-
 # noinspection PyRedundantParentheses
+from DQN import DQN
+from blackJackEnv import blackJack
+
+
 class solveBlackJacK:
-    numEpisodes = 10000000
-    merges = [[1, 2, 3, 4, 5, 6], [7, 8, 9, 10]]
+    numEpisodes = 5000
+    # merges = [[1, 2, 3, 4, 5, 6], [7, 8, 9, 10]]
+
     # merges = [[1, 2], [3, 4], [5, 6], [7, 8], [9, 10]]
-    # merges = [[1], [2], [3], [4], [5], [6], [7], [8], [9], [10]]
+    merges = [[1], [2], [3], [4], [5], [6], [7], [8], [9], [10]]
 
     def __init__(self):
         self.learningRate = 0.5
@@ -30,9 +32,9 @@ class solveBlackJacK:
             for i in grp:
                 temp += count[i]
             merged.append(temp)
-        return tuple(list(state[:-11]) + merged)
-#         return tuple(list(state[:-11]))
+        return np.asarray(tuple(list(state[:-11]) + merged)).reshape([1, 4 + len(merged)])
 
+    #         return tuple(list(state[:-11]))
 
     def new_actions(self):
         return [0, 0]
@@ -49,21 +51,21 @@ class solveBlackJacK:
                 if (isNatural):
                     action = 0
                 else:
-                    action = agent.policy(gameState)
+                    action = self.agent.policy(gameState)
 
                 new_gameState, reward, done, isNatural = self.env.step(action)
                 new_gameState = self.merge(new_gameState)
-                
-                self.agent.replay_buffer.store([gameState, action, reward,new_gameState, done])
-                self.agent.train()
-                
+
+                self.agent.replay_buffer.store([gameState, action, reward, new_gameState, done])
+                self.agent.train(episode)
+
                 gameState = new_gameState
                 rewardCurrEpisode += reward
                 if (done):
                     break
 
             if (episode % (self.numEpisodes / 100) == 0):
-                print("Episode :", episode, "Reward :", rewardCurrEpisode," Exp rate :", self.agent.explorationRate)
+                print("Episode :", episode, "Reward :", rewardCurrEpisode, " Exp rate :", self.agent.explorationRate)
             self.allRewards.append(rewardCurrEpisode)
 
         self.endTime = time.perf_counter()

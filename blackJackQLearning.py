@@ -4,12 +4,11 @@ import random as randi
 import time
 import matplotlib.pyplot as plt
 
-
 # noinspection PyRedundantParentheses
 class solveBlackJacK:
     numEpisodes = 3000000
-    merges = [[1, 2, 3, 4, 5, 6, 7], [8, 9, 10]]
-    # merges = [[1, 2, 3, 4], [4, 5, 6, 7, 8], [9, 10]]
+    # merges = [[1, 2, 3, 4, 5, 6, 7], [8, 9, 10]]
+    merges = [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10]]
     # merges = [[1], [2], [3], [4], [5], [6], [7], [8], [9], [10]]
 
     def __init__(self):
@@ -33,8 +32,8 @@ class solveBlackJacK:
             for i in grp:
                 temp += count[i]
             merged.append(temp)
-        # return tuple(list(state[:-11]) + merged)
-        return tuple(list(state[:-11]))
+        return tuple(list(state[:-11]) + merged)
+        # return tuple(list(state[:-11]))
 
     def new_actions(self):
         return [0, 0]
@@ -132,9 +131,12 @@ class solveBlackJacK:
         array_x = array_x[4:-5]
         array_x = np.array(array_x)
         plt.plot(array_x, moving_aves)
-        # plt.show()
-        np.savetxt("WOCC_xValues_R1.txt", array_x, fmt="%s")
-        np.savetxt("WOCC_yValues_R1.txt", array_y, fmt="%s")
+        plt.title("Q Learning : With card counting (1 Rounds)")
+        plt.xlabel("Number of episodes")
+        plt.ylabel("Average reward")
+        plt.show()
+        np.savetxt("WICC_1_xValues_QL_1.txt", array_x, fmt="%s")
+        np.savetxt("WICC_1_yValues_QL_1.txt", moving_aves, fmt="%s")
 
 
 if __name__ == "__main__":
